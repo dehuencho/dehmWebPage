@@ -9,3 +9,8 @@ blogdown::stop_server()
 
 blogdown::check_gitignore()
 blogdown::check_content()
+
+rstudioapi::navigateToFile('config.yaml', line = 3)
+
+blogdown::config_netlify()
+blogdown::check_netlify()
