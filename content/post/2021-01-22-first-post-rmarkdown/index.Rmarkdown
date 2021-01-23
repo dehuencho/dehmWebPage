@@ -1,0 +1,48 @@
+---
+title: First post rmarkdown
+author: ''
+date: '2021-01-22'
+slug: first-post-rmarkdown
+categories: []
+tags: []
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2021-01-22T23:13:24-03:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(ggplot2)
+library(plotly)
+```
+
+## This is a title 
+
+Tratemos de hacer un gáfico 
+
+```{r}
+y <- 1:100 + rnorm(n = 100, mean = 0, sd = 5)
+x <- 1:100
+
+ggplot(data = data.frame(y=y,x=x),
+       aes(x,y)) +
+    geom_point() +
+    theme_bw()
+```
+
+Tratemos otra cosa 
+
+```{r}
+ plot_ly(data = data.frame(y=y,x=x),
+         x = ~x) %>%
+  add_trace(y=~y, name = "Tr1", mode = 'markers', type = 'scatter')
+```
+
+
