@@ -3,47 +3,45 @@ bio: My research interests include distributed robotics, mobile computing and pr
   matter.
 education:
   courses:
-  - course: PhD in Artificial Intelligence
-    institution: Stanford University
-    year: 2012
-  - course: MEng in Artificial Intelligence
-    institution: Massachusetts Institute of Technology
-    year: 2009
-  - course: BSc in Artificial Intelligence
-    institution: Massachusetts Institute of Technology
-    year: 2008
+  - course: MSc in Statistics
+    institution: Pontificia Universidad Católica de Chile
+    year: 2020
+  - course: Major in Industrial Engineering and minor in Transport systems
+    institution: Pontificia Universidad Católica de Chile
+    year: 2017
 email: ""
 highlight_name: false
 interests:
-- Artificial Intelligence
-- Computational Linguistics
-- Information Retrieval
+- Machine Learning
+- Statistics
+- Data Visualization
+- R and Shiny
+- Python
+- Running
 organizations:
-- name: Stanford University
-  url: https://www.stanford.edu/
-role: Professor of Artificial Intelligence
+- name: Metro de Santiago
+  url: https://metro.cl/
+role: Data Scientist
 social:
-- icon: envelope
-  icon_pack: fas
-  link: /#contact
 - icon: twitter
   icon_pack: fab
-  link: https://twitter.com/GeorgeCushen
-- icon: graduation-cap
-  icon_pack: fas
-  link: https://scholar.google.co.uk/citations?user=sIwtMXoAAAAJ
+  link: https://twitter.com/dehuencho
 - icon: github
   icon_pack: fab
-  link: https://github.com/gcushen
+  link: https://github.com/dehuencho
 - icon: linkedin
   icon_pack: fab
-  link: https://www.linkedin.com/
+  link: https://www.linkedin.com/in/daniel-huencho-mardini-9568489a/
 superuser: true
-title: Nelson Bighetti
+title: Daniel Huencho
 ---
 
-Nelson Bighetti is a professor of artificial intelligence at the Stanford AI Lab. His research interests include distributed robotics, mobile computing and programmable matter. He leads the Robotic Neurobiology group, which develops self-reconfiguring robots, systems of self-organizing robots, and mobile sensor networks.
+I have worked in the transport industry for the last 3 years, developing machine
+learning models with strong basis in statistics and creating tools that a allow my
+organization to deliver a better service to the 2.5 million people that travel per
+day in the Santiago’s subways network. I’m passionate about creating value
+from data with different tools like Python and R. I firmly believe in maintaining a
+healthy body for a good life, so exercise and training my mind are central pillars
+on my day-to-day activities.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed neque elit, tristique placerat feugiat ac, facilisis vitae arcu. Proin eget egestas augue. Praesent ut sem nec arcu pellentesque aliquet. Duis dapibus diam vel metus tempus vulputate.
-
-{{< icon name="download" pack="fas" >}} Download my {{< staticref "media/demo_resume.pdf" "newtab" >}}resumé{{< /staticref >}}.
+{{< icon name="download" pack="fas" >}} Download my {{< staticref "media/DanielHuenchoCV.pdf" "newtab" >}}resumé{{< /staticref >}}.

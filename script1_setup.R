@@ -14,3 +14,12 @@ rstudioapi::navigateToFile('config.yaml', line = 3)
 
 blogdown::config_netlify()
 blogdown::check_netlify()
+
+blogdown::check_hugo()
+
+rstudioapi::navigateToFile("config/_default/params.toml")
+rstudioapi::navigateToFile("config/_default/menus.toml")
+blogdown::check_config()
+
+
+rstudioapi::navigateToFile("content/authors/admin/_index.md")
