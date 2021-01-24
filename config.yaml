@@ -1,7 +1,7 @@
 theme: starter-academic
-title: Academic
+title: Daniel Huencho
 baseurl: 'https://vibrant-nightingale-23171d.netlify.app/'
-copyright: ''
+copyright: '© Daniel Huencho 2021. Made with the R blogdown package and the Academic theme for Hugo.'
 enableGitInfo: no
 defaultContentLanguage: en
 hasCJKLanguage: no
