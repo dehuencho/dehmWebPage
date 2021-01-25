@@ -8,3 +8,55 @@
 #about > div.container > div > div.col-12.col-lg-8 > div.article-style {
     text-align: justify;
 }
+
+#demo > div.container > div > div > div > div.col-md-8 > p {
+    text-align: justify;
+}
+
+#demo > div.container > div > div > div > div.col-md-4 > figure > a > img {
+    border-radius: 50%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    mix-blend-mode: exclusion;
+    khtml-user-select: none;
+    o-user-select: none;
+    moz-user-select: none;
+    webkit-user-select: none;
+    user-select: none;
+    cursor: none;
+    
+}
+
+#demo > div.container > div > div > div > div.col-md-4 > img {
+        border-radius: 50%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    mix-blend-mode: exclusion;
+    khtml-user-select: none;
+    o-user-select: none;
+    moz-user-select: none;
+    webkit-user-select: none;
+    user-select: none;
+    cursor: none;
+}
+
+body {
+  --logo: url(/images/logo_hu1cbc500f617a1be0a4fca79c8ab50e28_34754_0x70_resize_lanczos_2.png) no-repeat;
+
+}
+
+body[data-theme="dark"] {
+  --logo: url(/images/logo_hu1cbc500f617a1be0a4fca79c8ab50e28_34754_0x70_resize_lanczos_2.png) no-repeat;
+}
+
+.logo {
+  display: block;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  background: var(--logo);
+  background-size: 60px;
+  height: 80px;
+  padding-left: 100px;
+}

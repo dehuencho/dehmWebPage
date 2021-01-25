@@ -18,8 +18,8 @@ subtitle:
 design:
   columns: "1"
   background:
-    image: headers/bubbles-wide.jpg
-    image_darken: 0.6
+    image: headers/earth-3866609_1920_Pete Linforth.jpg
+    image_darken: 0.4
     image_parallax: true
     image_position: center
     image_size: cover
@@ -28,16 +28,12 @@ design:
     padding: ["20px", "0", "20px", "0"]
 ---
 
-Welcome to the demo of the **resumé template** for Academic.
-
-[View more templates](https://sourcethemes.com/academic/templates/) for Academic.
-
-**Over 500,000 [Amazing Websites](https://sourcethemes.com/academic/) have Already Been Built with Academic**
-
-**[Join](https://sourcethemes.com/academic/docs/install/) the Most Empowered Hugo Community**
-
-{{% alert note %}}
-This homepage section is an example of adding [elements](https://sourcethemes.com/academic/docs/writing-markdown-latex/) to the [*Blank* widget](https://sourcethemes.com/academic/docs/widgets/).
-
-Backgrounds can be applied to any section. Here, the *background* option is set give an *image parallax* effect.
-{{% /alert %}}
+<div class = "row">
+<div class = "col-md-8">
+<p>
+This is a personal blog created on January 2021, and its address heterogeneous topics like statistics, transportation, computation science, among others. The goal of this project is to document and share notes/analysis I have made in the past and allow me to organize my exploration and studying of new topics. Also, it will be an oportunity to practice my writing in english and to be accountable for my development. </p>
+</div>
+<div class = "col-md-4">
+<img src = "/media/SantiagoNoFluye.gif" alt = "Python" width = "250" height = "200">
+</div>
+</div>
