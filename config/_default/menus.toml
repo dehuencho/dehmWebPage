@@ -10,8 +10,13 @@
 
 [[main]]
   name = "Posts"
-  url = "#posts"
+  url = "#demo"
   weight = 10
+
+[[main]]
+  name = "About"
+  url = "/about"
+  weight = 30
 
 [[main]]
   name = "R"
@@ -19,9 +24,9 @@
   weight = 40
 
 [[main]]
-  name = "About"
-  url = "/about"
-  weight = 30
+  name = "Python"
+  url = "/pythonpost"
+  weight = 50
 
 #[[main]]
 #  name = "Projects"

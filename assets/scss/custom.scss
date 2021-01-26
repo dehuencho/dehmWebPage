@@ -13,31 +13,83 @@
     text-align: justify;
 }
 
-#demo > div.container > div > div > div > div.col-md-4 > figure > a > img {
-    border-radius: 50%;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    mix-blend-mode: exclusion;
-    khtml-user-select: none;
-    o-user-select: none;
-    moz-user-select: none;
-    webkit-user-select: none;
-    user-select: none;
-    cursor: none;
-    vertical-align: top;
-    
-}
-
 #demo > div.container > div > div > div > div.col-md-4 > img {
     border-radius: 50%;
     margin: 0;
     padding: 0;
     mix-blend-mode: exclusion;
+    background: rgba(255, 255, 255, 1);
     khtml-user-select: none;
     o-user-select: none;
     moz-user-select: none;
     webkit-user-select: none;
     user-select: none;
     cursor: none;
+}
+
+a[id='nav-link active']{
+    color: #4b519c;
+}
+
+.navbar .navbar-nav .nav-link.active {
+    color: #7798AB !important;
+}
+
+a:hover {
+    color: #7798AB !important;
+}
+
+.dark a:hover {
+    color: #7798AB !important;
+}
+
+.dark .navbar .navbar-nav .nav-link.active {
+    color: #7798AB !important;
+}
+
+#gallery > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) {
+    flex: 0 0 100%;
+    max-width: 100%;
+}
+
+.gallery {
+	text-align: center;
+}
+
+.gallery {
+	margin: 0.5em -15px 1.5em -15px;
+	font-size: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Playfair Display",sans-serif;
+}
+
+.bar {
+  list-style: none;
+  color: #b2b2b2;
+}
+.bar >li {
+  position: relative;
+}
+.bar>li:before {
+  content: '\25CF';
+  margin-right: 10px;
+  font-size: 20px;
+  color: #808080;
+}
+.bar>li:after {
+  position: absolute;
+  left: 0;
+  top: 0;
+  content: '';
+  border-left: 2px solid #9999995e;
+  margin-left: 5px;
+  height: 100%;
+}
+.bar >li:first-of-type:after {
+  top: 50%;
+}
+.bar >li:last-of-type:after {
+  top: -50%;
 }
