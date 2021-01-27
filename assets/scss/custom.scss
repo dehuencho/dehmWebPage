@@ -93,3 +93,10 @@ h1, h2, h3, h4, h5, h6 {
 .bar >li:last-of-type:after {
   top: -50%;
 }
+
+.home-section {
+	background: white;
+	position: relative;
+	padding: 80px 0 110px 0;
+	z-index: 0;
+}
