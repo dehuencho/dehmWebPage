@@ -1,0 +1,335 @@
+---
+title: KMeans clusters for geographic zones classifcation with public transport trips
+author: Daniel Huencho
+date: '2021-02-10'
+slug: kmeans-clusters-for-zones-classifcation-with-public-transport-trips
+categories: ["R"]
+tags: ["R", "rspatial", "sf", "maps", "transport", "public transport"]
+subtitle: ''
+summary: "In this post I will load trips data by 30 min for each zone in Santiago City. The geographic zones limits are defined by the transport department of Chile\\'s government and there area 777 zone in Santiago\\'s areas. With this data set i will use a unsupervised classification method to group the zone and see if we can observe some geographic patterns in the results."
+authors: []
+lastmod: '2021-02-10T12:13:00-03:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: ["R"]
+math: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+library(ggplot2)
+library(plotly)
+library(DBI)
+library(dplyr)
+library(dbplyr)
+library(odbc)
+library(sf)
+```
+
+## Introduction 
+
+In this post I will load trips data with 30 minutes interval from april of 2019 for each zone in Santiago City. The geographic zones limits are defined by the transport department of Chile's government and there area 777 zone in Santiago's area. With this data set I will use an unsupervised classification method to group the zone and see if we can observe some geographic patterns. This results can be seen, and further analysed can be done, in the following dashboard: [Santiago's public transport dashboard.](https://dhm2017.shinyapps.io/OriginDestinationShinyApp/) 
+
+INSERTAR IMAGENES DASHBOARD
+
+## Reading the data 
+
+For this analysis I will load the data from a Postgres cloud data base. I had to create this DB for the dashboard i mentioned in the introduction because the environment of [Shinyapp.io](https://www.shinyapps.io/) only allow 1 GB of RAM and the complete table is bigger than that. The data is avaible on [Region Metropolitana's department of transport website.](https://www.dtpm.cl/)  
+
+The first thing to do is to define the [DB connection](https://db.rstudio.com/best-practices/managing-credentials/) with the DBI package, in this case I will use some environment variables of my PC for the connection information. This is a safe way to avoid sharing the sensible data on the script. The output shows the structure of the table that i will use in this analysis. The columns of the table are the zones of origin and destination, the half an hour of the day, the mean trips of work days, trips grouped by number travel stages and modes.  
+
+```{r}
+con <- 
+    DBI::dbConnect(RPostgres::Postgres(),
+                   dbname = as.character(Sys.getenv()["dhpaws_dbname"]),
+                   host = as.character(Sys.getenv()["dhpaws_server"]),
+                   port = as.character(Sys.getenv()["dhpaws_port"]),
+                   user = as.character(Sys.getenv()["dhpaws_uid"]),
+                   password= as.character(Sys.getenv()["dhpaws_pwd"])
+    )
+
+## loading the table with the trips between zones
+q1 <- dplyr::tbl(con, "viajeszonas20194")
+## printing the first rows description
+str(head(q1) %>% dplyr::collect()) 
+```
+
+## Data processing and exploration
+
+In the next block of code I send a query to the DB for grouping the trips by zone and half an hour of the day and summarize the sum of boarding and get off of each group, then collect the result. This process is separate for boarding and get off, then mixed with a left join.   
+
+```{r}
+subidas_zonas <- 
+  q1 %>% 
+  group_by(Zona777Subida, MediaHora) %>%
+  summarise(Subidas = sum(ViajeLaboralPromedio)) %>% 
+  collect()
+
+bajadas_zonas <- 
+  q1 %>% 
+  group_by(Zona777Bajada, MediaHora) %>%
+  summarise(Bajadas = sum(ViajeLaboralPromedio)) %>% 
+  collect()
+
+SubidasBajadas_zonas <- 
+  subidas_zonas %>% 
+  dplyr::left_join(bajadas_zonas, 
+                   by = c("Zona777Subida" = "Zona777Bajada",
+                          "MediaHora" = "MediaHora")) %>% 
+  dplyr::rename(Zona = Zona777Subida) %>% 
+  dplyr::mutate(Subidas = round(Subidas),
+                Bajadas = round(Bajadas))
+
+rm(subidas_zonas, bajadas_zonas)
+```
+
+Then with this data I can plot the trips boarding and get off by zone. I load the shape files with the **sf** package and set the coordinate reference system. I created a column with the half hour of the day like factor because that  allow me to have a good formatted column with and ordered structure(I used the **lubridate** to arrange it). At last I filter for the am and pm peak periods creating two tables with the information for the plots. 
+
+```{r}
+zonas_777_DTPM <- sf::read_sf("Shape/Zonas777_V07_04_2014.shp")
+crs_santiago <- "+proj=longlat +ellps=WGS84 +no_defs  +datum=WGS84"
+sf::st_crs(zonas_777_DTPM) <- crs_santiago
+rm(crs_santiago)
+
+SubidasBajadas_zonas<-
+  SubidasBajadas_zonas %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(lubridate::hms(MediaHora)) %>% 
+  dplyr::mutate(Time_fctr = stringr::str_sub(MediaHora,start = 1,end = 5),
+                Time_fctr = factor(Time_fctr, levels = unique(Time_fctr),
+                                   ordered = TRUE))
+
+Time_levels <- levels(SubidasBajadas_zonas$Time_fctr)
+
+zonas_777_DTPM_am <-
+zonas_777_DTPM %>% 
+  dplyr::left_join(SubidasBajadas_zonas %>% 
+                     dplyr::filter(as.character(Time_fctr) %in% 
+                                     Time_levels[11:19]) %>% 
+                     dplyr::group_by(Zona) %>% 
+                     dplyr::summarise(Subidas = sum(Subidas, na.rm = T),
+                                      Bajadas = sum(Bajadas, na.rm = T)), 
+                   by = c("ZONA777" = "Zona")) 
+
+zonas_777_DTPM_pm <-
+zonas_777_DTPM %>% 
+  dplyr::left_join(SubidasBajadas_zonas %>% 
+                     dplyr::filter(as.character(Time_fctr) %in% 
+                                     Time_levels[34:42]) %>% 
+                     dplyr::group_by(Zona) %>% 
+                     dplyr::summarise(Subidas = sum(Subidas, na.rm = T),
+                                      Bajadas = sum(Bajadas, na.rm = T)), 
+                   by = c("ZONA777" = "Zona")) 
+
+```
+
+I plot the peak periods, where you can see how for destination in am is concentrated in northeast zones and the origins are more evenly distributed (in the afternoon peaks is the reverse situation). 
+
+```{r map_leaflet1, echo=FALSE, message=FALSE, warning=FALSE,fig.show="hold", out.width="50%"}
+probs_colors <- c(0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.98,0.99)
+
+domain_color <- c(zonas_777_DTPM_am$Subidas,
+                        zonas_777_DTPM_am$Bajadas)
+zonas_777_DTPM_plot <- 
+  zonas_777_DTPM_am %>% 
+  dplyr::mutate(fill_color1 = 
+                  leaflet::colorQuantile(palette = "Greens",
+                                         domain = domain_color,
+                                         probs = probs_colors,
+                                         na.color = "#ffffe3")(Subidas),
+                fill_color2 = 
+                  leaflet::colorQuantile(palette = "Reds",
+                                         domain = domain_color,
+                                         probs = probs_colors,
+                                         na.color = "#ffffe3")(Bajadas),
+                COMUNA = ifelse(stringr::str_detect(COMUNA, "ALOLEN"),
+                                "PENANOLEN", COMUNA),
+                COMUNA = ifelse(stringr::str_detect(COMUNA, "OA$"),
+                                "NUNOA", COMUNA),
+                text_lab = lapply(paste0(COMUNA,
+                                         "<br>Subidas: ",
+                                         format(Subidas,
+                                                big.mark = ".",
+                                                decimal.mark = ","),
+                                         "<br>Bajadas: ",
+                                         format(Bajadas,
+                                                big.mark = ".",
+                                                decimal.mark = ",")),
+                                  htmltools::HTML))
+
+leaf1 <- leaflet::leaflet(zonas_777_DTPM_plot,
+                 options = leaflet::leafletOptions(zoomControl = FALSE,
+                                                   minZoom = 10, 
+                                                   maxZoom = 10,
+                                                   zoomSnap = 0.01)) %>%
+  leaflet::setView(lng = -70.69,
+                   lat =  -33.5,
+                   zoom = 10)%>% 
+  leaflet::addPolygons(data = zonas_777_DTPM_plot,
+                       color = "grey",
+                       weight = 1,
+                       smoothFactor = 0.5,
+                       fillColor = ~fill_color1,
+                       fillOpacity = 0.7,
+                       label = ~text_lab)
+
+leaf2 <- leaflet::leaflet(zonas_777_DTPM_plot,
+                 options = leaflet::leafletOptions(zoomControl = FALSE,
+                                                   minZoom = 10, 
+                                                   maxZoom = 10,
+                                                   zoomSnap = 0.01)) %>%
+  leaflet::setView(lng = -70.69,
+                   lat =  -33.5,
+                   zoom = 10)%>% 
+  leaflet::addPolygons(data = zonas_777_DTPM_plot,
+                       color = "grey",
+                       weight = 1,
+                       smoothFactor = 0.5,
+                       fillColor = ~fill_color2,
+                       fillOpacity = 0.7,
+                       label = ~text_lab)
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    htmltools::tags$div(
+      style = "color: black;",
+      shiny::h1("Trip between 9 and 10 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Origin") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Destination") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf1
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf2
+    )
+  ))
+)
+```
+
+```{r map_leaflet2, echo=FALSE, message=FALSE, warning=FALSE,fig.show="hold", out.width="50%"}
+probs_colors <- c(0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.98,0.99)
+
+domain_color <- c(zonas_777_DTPM_pm$Subidas,
+                        zonas_777_DTPM_pm$Bajadas)
+zonas_777_DTPM_plot <- 
+  zonas_777_DTPM_pm %>% 
+  dplyr::mutate(fill_color1 = 
+                  leaflet::colorQuantile(palette = "Greens",
+                                         domain = domain_color,
+                                         probs = probs_colors,
+                                         na.color = "#ffffe3")(Subidas),
+                fill_color2 = 
+                  leaflet::colorQuantile(palette = "Reds",
+                                         domain = domain_color,
+                                         probs = probs_colors,
+                                         na.color = "#ffffe3")(Bajadas),
+                COMUNA = ifelse(stringr::str_detect(COMUNA, "ALOLEN"),
+                                "PENANOLEN", COMUNA),
+                COMUNA = ifelse(stringr::str_detect(COMUNA, "OA$"),
+                                "NUNOA", COMUNA),
+                text_lab = lapply(paste0(COMUNA,
+                                         "<br>Subidas: ",
+                                         format(Subidas,
+                                                big.mark = ".",
+                                                decimal.mark = ","),
+                                         "<br>Bajadas: ",
+                                         format(Bajadas,
+                                                big.mark = ".",
+                                                decimal.mark = ",")),
+                                  htmltools::HTML))
+
+leaf1 <- leaflet::leaflet(zonas_777_DTPM_plot,
+                 options = leaflet::leafletOptions(zoomControl = FALSE,
+                                                   minZoom = 10, 
+                                                   maxZoom = 10,
+                                                   zoomSnap = 0.01)) %>%
+  leaflet::setView(lng = -70.69,
+                   lat =  -33.5,
+                   zoom = 10)%>% 
+  leaflet::addPolygons(data = zonas_777_DTPM_plot,
+                       color = "grey",
+                       weight = 1,
+                       smoothFactor = 0.5,
+                       fillColor = ~fill_color1,
+                       fillOpacity = 0.7,
+                       label = ~text_lab)
+
+leaf2 <- leaflet::leaflet(zonas_777_DTPM_plot,
+                 options = leaflet::leafletOptions(zoomControl = FALSE,
+                                                   minZoom = 10, 
+                                                   maxZoom = 10,
+                                                   zoomSnap = 0.01)) %>%
+  leaflet::setView(lng = -70.69,
+                   lat =  -33.5,
+                   zoom = 10)%>% 
+  leaflet::addPolygons(data = zonas_777_DTPM_plot,
+                       color = "grey",
+                       weight = 1,
+                       smoothFactor = 0.5,
+                       fillColor = ~fill_color2,
+                       fillOpacity = 0.7,
+                       label = ~text_lab)
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    htmltools::tags$div(
+      style = "color: black;",
+      shiny::h1("Trip between 16:30 and 20:30 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Origin") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Destination") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf1
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf2
+    )
+  ))
+)
+```
+
+It is not easy or straight forward to visualize this effect, so for having a better understanding we will use a cluster unsupervised method that can help us find this type of patterns. 
+
+## Kmeans explained 
+
+
+Kmeans is a clustering algorithm that group our observation in k clusters. The idea of clustering is to create groups where the observation that belong to the same cluster are similar to each other than to observations of a different cluster.
+
+This is an unsupervised method, so it doesn't need label to work. The algorithm search for patterns of similarity in the data and generate the labels for us.  
+
+Kmeans define similarity between two observation using the concept of distance. There are different methods to measure distance. One method that is commonly use is th [Euclidean distance](https://en.wikipedia.org/wiki/Euclidean_distance#:~:text=In%20mathematics%2C%20the%20Euclidean%20distance,being%20called%20the%20Pythagorean%20distance.), that calculate the distance using the square of the difference between each co-varible or dimension of the data. 
+
+$$\\sum{x\\_i}$$
+
+$$
+\begin{aligned}
+ \textrm{Euclidean distance } (\vec{x_i}, \vec{x_j}) = \sqrt{(x_{i1}-x_{j1})^2+(x_{i1}-x_{j1})^2+...+(x_{in}-x_{jn})^2}
+\end{aligned}
+$$
+
+
+
+
+## Ploting
+
+## Gif creation 

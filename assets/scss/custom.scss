@@ -100,3 +100,47 @@ h1, h2, h3, h4, h5, h6 {
 	padding: 80px 0 110px 0;
 	z-index: 0;
 }
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	padding: .5em;
+	color: #333;
+	background: #e8e8e8;
+}
+
+#top > div.page-body > article > div.article-container.pt-3 > h1 {
+    font-size: 2.0rem;
+    text-align: left;
+}
+
+#posts > div.container > div > div.col-12.col-lg-8 > div:nth-child(1) > div.media-body > a > div {
+    text-align: justify;
+}
+
+
+p {
+    font-family: Montserrat, sans-serif !important;
+    /*font-family: 'Roboto', sans-serif;*/
+    font-weight: lighter;
+    text-align: justify;
+    font-size: 0.9rem;
+}
+
+#PlotTitle {
+    text-align: center;
+    margin: 5px 0 5px 0;
+    font-size: 1.4rem;
+}
+
+#leaf1T, #leaf2T {
+    text-align: center;
+    margin: 5px 0 0 5px;
+    font-size: 1.2rem;
+    color: grey;
+}
+
+.leaflet-container {
+    background: inherit !important;
+    outline: 0;
+}

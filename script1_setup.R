@@ -1,6 +1,6 @@
 blogdown::new_site(theme = "wowchemy/starter-academic")
 blogdown::config_Rprofile()
-blogdown::new_post(title = "First post rmarkdown", 
+blogdown::new_post(title = "KMeans clusters for zones classifcation with public transport trips", 
                    ext = '.Rmarkdown', 
                    subdir = "post")
 

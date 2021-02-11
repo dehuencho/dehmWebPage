@@ -1,20 +1,20 @@
 ---
-title: First post rmarkdown
-author: ''
-date: '2021-01-22'
-slug: first-post-rmarkdown
+title: Creating a Gif with geospatial temporal data in R
+author: Daniel Huencho
+date: '2021-01-27'
+slug: creating-a-gif-with-geospatial-temporal-data-in-r
 categories: ["R"]
-tags: ["R Markdown", "plot", "regression"]
+tags: ["R", "rspatial", "sf", "maps", "gif"]
 subtitle: ''
-summary: ''
+summary: 'We will read geospatial data bla bla bla ...'
 authors: []
-lastmod: '2021-01-22T23:13:24-03:00'
+lastmod: '2021-01-27T12:54:44-03:00'
 featured: no
 image:
   caption: ''
   focal_point: ''
   preview_only: no
-projects: ["First posts"]
+projects: ["R"]
 ---
 
 ```{r setup, include=FALSE}
@@ -23,7 +23,9 @@ library(ggplot2)
 library(plotly)
 ```
 
-## This is a title 
+## Introduction 
+
+## Reading the data 
 
 Tratemos de hacer un gáfico para testear
 
@@ -46,3 +48,8 @@ Tratemos otra cosa
 ```
 
 
+## Preprocess
+
+## Ploting
+
+## Gif creation 
