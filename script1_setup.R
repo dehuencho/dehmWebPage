@@ -1,7 +1,7 @@
 blogdown::new_site(theme = "wowchemy/starter-academic")
 blogdown::config_Rprofile()
-blogdown::new_post(title = "KMeans clusters for zones classifcation with public transport trips", 
-                   ext = '.Rmarkdown', 
+blogdown::new_post(title = "KMeans clusters for zones classifcation with public transport trips2", 
+                   ext = '.Rmd', 
                    subdir = "post")
 
 blogdown::serve_site()

@@ -144,3 +144,16 @@ p {
     background: inherit !important;
     outline: 0;
 }
+
+#final-result-in-maps > ul > li > a {
+    color: white ;
+    margin: 0 1px 0 1px;
+    padding: 1px 4px 1px 4px;
+    border: 1px solid grey;
+    background: grey;
+    border-radius: 5px;
+}
+
+#final-result-in-maps > ul > li > a.active {
+    color: #8be9fd;
+}

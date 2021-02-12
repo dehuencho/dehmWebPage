@@ -1,7 +1,7 @@
 ---
-title: KMeans clusters for geographic zones classifcation with public transport trips
+title: KMeans clusters for zones classifcation with public transport trips
 author: Daniel Huencho
-date: '2021-02-10'
+date: '2021-02-11'
 slug: kmeans-clusters-for-zones-classifcation-with-public-transport-trips
 categories: ["R"]
 tags: ["R", "rspatial", "sf", "maps", "transport", "public transport"]
@@ -16,6 +16,7 @@ image:
   preview_only: no
 projects: ["R"]
 math: true
+markup: mmark
 ---
 
 ```{r setup, include=FALSE}
@@ -27,6 +28,9 @@ library(dplyr)
 library(dbplyr)
 library(odbc)
 library(sf)
+library(ggtext)
+#library(crosstalk)
+library(leaflet)
 ```
 
 ## Introduction 
@@ -196,7 +200,7 @@ htmltools::browsable(
   htmltools::tagList(list(
     htmltools::tags$div(
       style = "color: black;",
-      shiny::h1("Trip between 9 and 10 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+      shiny::h1("Trip between 9:00 and 10:00 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
     ),
     htmltools::tags$div(
       style = "color: black;width:50%;display:block;float:left;",
@@ -319,7 +323,6 @@ This is an unsupervised method, so it doesn't need label to work. The algorithm 
 
 Kmeans define similarity between two observation using the concept of distance. There are different methods to measure distance. One method that is commonly use is th [Euclidean distance](https://en.wikipedia.org/wiki/Euclidean_distance#:~:text=In%20mathematics%2C%20the%20Euclidean%20distance,being%20called%20the%20Pythagorean%20distance.), that calculate the distance using the square of the difference between each co-varible or dimension of the data. 
 
-$$\\sum{x\\_i}$$
 
 $$
 \begin{aligned}
@@ -328,8 +331,377 @@ $$
 $$
 
 
+## Applying Kmeans to our data
+
+```{r}
+Kmeans_df <- 
+SubidasBajadas_zonas %>%
+  dplyr::mutate(Time_str = 
+                  paste0("Sub_H",stringr::str_replace(Time_fctr,
+                                                  ":","_"))) %>% 
+  dplyr::select(Zona, Time_str, Subidas) %>% 
+  tidyr::pivot_wider(Zona,
+                     names_from = Time_str,
+                     values_from = Subidas, values_fill = 0) %>% 
+  left_join(
+    SubidasBajadas_zonas %>%
+      dplyr::mutate(Time_str = 
+                      paste0("Baj_H",stringr::str_replace(Time_fctr,
+                                                          ":","_"))) %>% 
+      dplyr::select(Zona, Time_str, Bajadas) %>% 
+      tidyr::pivot_wider(Zona,
+                         names_from = Time_str,
+                         values_from = Bajadas, values_fill = 0))
+
+Kmeans_df[is.na(Kmeans_df)] <- 0
+```
+
+```{r}
+n_centers <- 2:50
+
+mod1_tot.withinss <- 
+lapply(n_centers,function(x){
+  mod1 <- 
+    kmeans(as.matrix(Kmeans_df %>%
+                       select(-Zona)),
+           centers = x,
+           iter.max = 250)
+  return(mod1$tot.withinss)
+})
+
+ggplot(data = data.frame(centers = n_centers,
+                         tot.withinss = unlist(mod1_tot.withinss))) +
+  geom_point(aes(x = centers,
+                 y = tot.withinss)) + 
+  scale_y_continuous(labels = function(x){paste0(format(x/1E6, big.mark = ".",
+                                                 decimal.mark = ","),"MM")})+
+  theme(plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white",
+                                        linetype = "solid"),
+        panel.grid.major.y = element_line(size = 0.5,
+                                          linetype = 'solid',
+                                          colour = "grey"),
+        axis.line.y.left = element_line(color = "black"),
+        axis.line.x.bottom = element_line(color = "black")
+  ) + labs(y = "", x = "Centers",
+           title = "Total within sum of square by cluster centers")
+
+## Vamos a probar con 18 
+```
+
+```{r cluster_plot, out.extra='id="hoge"', fig.height=10, fig.width=7 ,warning=FALSE, message=FALSE}
+set.seed(19634)
+mod1 <- 
+    kmeans(as.matrix(Kmeans_df %>%
+                       select(-Zona)),
+           centers = 11,
+           iter.max = 250)
+
+ploting_data <- 
+SubidasBajadas_zonas %>% 
+  left_join(Kmeans_df %>% 
+              select(Zona) %>% 
+              mutate(Cluster = mod1$cluster)) %>% 
+  group_by(Time_fctr, Cluster) %>% 
+  summarise(Subidas_mean = mean(Subidas),
+            Bajadas_mean = mean(Bajadas),
+            Subidas_sd = sd(Subidas),
+            Bajadas_sd = sd(Bajadas)) %>% 
+  ungroup() %>% 
+  mutate_if(is.double, round,2)
 
 
-## Ploting
+tm_lvls<- levels(ploting_data$Time_fctr)
 
-## Gif creation 
+
+ggplot(ploting_data %>% 
+         #filter(Cluster) %>% 
+         mutate(Up = Subidas_mean + Subidas_sd,
+                Low = Subidas_mean - Subidas_sd,
+                Up2 = Bajadas_mean + Bajadas_sd,
+                Low2 = Bajadas_mean - Bajadas_sd),
+       aes(x = Time_fctr)) +
+  geom_point(aes(x = Time_fctr,
+                 y = Subidas_mean),
+             color = "forestgreen",
+             size = 1, alpha = 0.3) +
+  geom_line(aes(x = Time_fctr,
+                y = Subidas_mean, 
+                group = 1), color = "forestgreen",
+            linetype = "dashed") +
+  geom_line(aes(x = Time_fctr,
+                y = Subidas_mean + Subidas_sd,
+                group = 1),color = "forestgreen") +
+  geom_line(aes(x = Time_fctr,
+                y = Subidas_mean - Subidas_sd,
+                group = 1),color = "forestgreen") +
+  geom_ribbon(aes(x = Time_fctr,
+                  ymin=Up,
+                  ymax=Low, group = 1),
+              fill="forestgreen", alpha=0.2) +
+  geom_point(aes(x = Time_fctr,
+                 y = Bajadas_mean),
+             color = "darkred",
+             size = 1, alpha = 0.3) +
+  geom_line(aes(x = Time_fctr,
+                y = Bajadas_mean, 
+                group = 1), color = "darkred",
+            linetype = "dashed") +
+  geom_line(aes(x = Time_fctr,
+                y = Bajadas_mean + Bajadas_sd,
+                group = 1),color = "darkred") +
+  geom_line(aes(x = Time_fctr,
+                y = Bajadas_mean - Bajadas_sd,
+                group = 1),color = "darkred") +
+  geom_ribbon(aes(x = Time_fctr,
+                  ymin=Up2,
+                  ymax=Low2, group = 1),
+              fill="red", alpha=0.2) +
+  scale_x_discrete(breaks = tm_lvls[seq(1,length(tm_lvls),by = 3)])+ 
+  facet_wrap(.~as.factor(Cluster),ncol = 3) +
+  theme(panel.background = element_rect(fill = "white",
+                                        linetype = 1,
+                                        color = "black"),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.text.y.left = element_text(),
+        axis.ticks = element_blank(),
+        strip.background = element_rect("grey", color = "black"),
+         plot.title = element_markdown(lineheight = 1.1))+
+  labs(y="", x = "",
+           title = "**Cluster trips by half an hour of the day**  
+    <span style='font-size:11pt'> 
+    <span style='color:#228b22;'>Boardings</span> and 
+    <span style='color:#8b0000;'>Gets off</span>
+    </span>")
+
+```
+
+## Final result in maps {.tabset  .tabset-fade .tabset-pills}
+
+```{r, include=FALSE}
+plot_bgo <- function(x){
+  
+  ggplot(ploting_data %>% 
+         #filter(Cluster) %>% 
+         mutate(Up = Subidas_mean + Subidas_sd,
+                Low = Subidas_mean - Subidas_sd,
+                Up2 = Bajadas_mean + Bajadas_sd,
+                Low2 = Bajadas_mean - Bajadas_sd) %>% 
+           filter(Cluster %in% x),
+       aes(x = Time_fctr)) +
+  geom_point(aes(x = Time_fctr,
+                 y = Subidas_mean),
+             color = "forestgreen",
+             size = 1, alpha = 0.3) +
+  geom_line(aes(x = Time_fctr,
+                y = Subidas_mean, 
+                group = 1), color = "forestgreen",
+            linetype = "dashed") +
+  geom_line(aes(x = Time_fctr,
+                y = Subidas_mean + Subidas_sd,
+                group = 1),color = "forestgreen") +
+  geom_line(aes(x = Time_fctr,
+                y = Subidas_mean - Subidas_sd,
+                group = 1),color = "forestgreen") +
+  geom_ribbon(aes(x = Time_fctr,
+                  ymin=Up,
+                  ymax=Low, group = 1),
+              fill="forestgreen", alpha=0.2) +
+  geom_point(aes(x = Time_fctr,
+                 y = Bajadas_mean),
+             color = "darkred",
+             size = 1, alpha = 0.3) +
+  geom_line(aes(x = Time_fctr,
+                y = Bajadas_mean, 
+                group = 1), color = "darkred",
+            linetype = "dashed") +
+  geom_line(aes(x = Time_fctr,
+                y = Bajadas_mean + Bajadas_sd,
+                group = 1),color = "darkred") +
+  geom_line(aes(x = Time_fctr,
+                y = Bajadas_mean - Bajadas_sd,
+                group = 1),color = "darkred") +
+  geom_ribbon(aes(x = Time_fctr,
+                  ymin=Up2,
+                  ymax=Low2, group = 1),
+              fill="red", alpha=0.2) +
+  scale_x_discrete(breaks = tm_lvls[seq(1,length(tm_lvls),by = 3)])+ 
+  theme(plot.background = element_rect(fill = "grey"),
+        panel.background = element_rect(fill = "grey",
+                                        linetype = 1,
+                                        color = "black"),
+        axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.text.y.left = element_text(),
+        axis.ticks = element_blank(),
+        strip.background = element_rect("grey", color = "black"),
+        plot.title = element_markdown(lineheight = 1.1))+
+    labs(y="", x = "")
+  #+
+  # labs(y="", x = "",
+  #          title = "**Cluster trips by half an hour of the day**  
+  #   <span style='font-size:11pt'> 
+  #   <span style='color:#228b22;'>**Boardings**</span> and 
+  #   <span style='color:#8b0000;'>**Gets off**</span>
+  #   </span>")
+}
+
+
+```
+
+```{r, include=FALSE}
+
+zonas_777_DTPM_plot_final <- 
+  zonas_777_DTPM_plot %>% left_join(Kmeans_df %>% 
+                                      select(Zona) %>% 
+                                      mutate(Cluster = mod1$cluster,
+                                             TotViaj = rowSums(Kmeans_df %>% select(-Zona))) %>% 
+                                      arrange(TotViaj) %>% 
+                                      mutate(Cluster2 = factor(Cluster,
+                                                               levels = unique(Cluster),
+                                                               ordered = T)) %>%
+                                      select(Zona, Cluster, Cluster2),
+                                    by = c("ZONA777"="Zona")) %>% 
+  mutate(fill_color3 = leaflet::colorFactor("viridis",domain = Cluster2, ordered = T)(Cluster2),
+         text_lab = lapply(paste0(COMUNA,
+                                  "<br>Cluster: ",Cluster),
+                           htmltools::HTML))
+
+```
+
+<ul class="nav nav-tabs">
+  <li><a data-toggle="tab" href="#clst1">C01</a></li>
+  <li><a data-toggle="tab" href="#clst2">C02</a></li>
+  <li><a data-toggle="tab" href="#clst3">C03</a></li>
+  <li><a data-toggle="tab" href="#clst4">C04</a></li>
+</ul>
+
+<div class="tab-content">
+  <div id="clst1" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%"}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 1, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(1)
+
+ggsave(plot_gg1,filename = "plot_c1.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    htmltools::tags$div(
+      style = "color: black;",
+      shiny::h1("Trip between 9:00 and 10:00 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Origin") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Destination") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c1.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst2" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%"}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 2, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(2)
+
+ggsave(plot_gg1,filename = "plot_c2.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    htmltools::tags$div(
+      style = "color: black;",
+      shiny::h1("Trip between 9:00 and 10:00 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Origin") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Destination") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c2.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst3" class="tab-pane fade">
+      <h3>Cluster 3</h3>
+      <p>Some content in cluster 3.</p>
+  </div>
+  <div id="clst4" class="tab-pane fade">
+      <h3>Cluster 4</h3>
+      <p>Some content in cluster 4.</p>
+  </div>
+</div>
