@@ -357,6 +357,7 @@ Kmeans_df[is.na(Kmeans_df)] <- 0
 ```
 
 ```{r}
+set.seed(19634)
 n_centers <- 2:50
 
 mod1_tot.withinss <- 
@@ -389,8 +390,8 @@ ggplot(data = data.frame(centers = n_centers,
 ## Vamos a probar con 18 
 ```
 
-```{r cluster_plot, out.extra='id="hoge"', fig.height=10, fig.width=7 ,warning=FALSE, message=FALSE}
-set.seed(19634)
+```{r cluster_plot,warning=FALSE, message=FALSE}
+
 mod1 <- 
     kmeans(as.matrix(Kmeans_df %>%
                        select(-Zona)),
@@ -410,7 +411,9 @@ SubidasBajadas_zonas %>%
   ungroup() %>% 
   mutate_if(is.double, round,2)
 
+```
 
+```{r cluster_plot2, echo=FALSE,out.extra='id="hoge"', fig.height=10, fig.width=7 ,warning=FALSE, message=FALSE}
 tm_lvls<- levels(ploting_data$Time_fctr)
 
 
@@ -533,7 +536,7 @@ plot_bgo <- function(x){
                                         color = "black"),
         axis.line = element_blank(),
         axis.text = element_blank(),
-        axis.text.y.left = element_text(),
+        axis.text.y.left = element_text(size = 15),
         axis.ticks = element_blank(),
         strip.background = element_rect("grey", color = "black"),
         plot.title = element_markdown(lineheight = 1.1))+
@@ -571,14 +574,21 @@ zonas_777_DTPM_plot_final <-
 ```
 
 <ul class="nav nav-tabs">
-  <li><a data-toggle="tab" href="#clst1">C01</a></li>
+  <li><a data-toggle="tab" href="#clst1" class = "active">C01</a></li>
   <li><a data-toggle="tab" href="#clst2">C02</a></li>
   <li><a data-toggle="tab" href="#clst3">C03</a></li>
   <li><a data-toggle="tab" href="#clst4">C04</a></li>
+  <li><a data-toggle="tab" href="#clst5">C05</a></li>
+  <li><a data-toggle="tab" href="#clst6">C06</a></li>
+  <li><a data-toggle="tab" href="#clst7">C07</a></li>
+  <li><a data-toggle="tab" href="#clst8">C08</a></li>
+  <li><a data-toggle="tab" href="#clst9">C09</a></li>
+  <li><a data-toggle="tab" href="#clst10">C10</a></li>
+  <li><a data-toggle="tab" href="#clst11">C11</a></li>
 </ul>
 
 <div class="tab-content">
-  <div id="clst1" class="tab-pane fade">
+  <div id="clst1" class="tab-pane fade active show">
 
 ```{r, echo=FALSE,fig.show="hold", out.width="50%"}
 
@@ -611,17 +621,14 @@ ggsave(plot_gg1,filename = "plot_c1.png")
 
 htmltools::browsable(
   htmltools::tagList(list(
+    shiny::br(),
     htmltools::tags$div(
-      style = "color: black;",
-      shiny::h1("Trip between 9:00 and 10:00 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
     ),
     htmltools::tags$div(
       style = "color: black;width:50%;display:block;float:left;",
-      shiny::h1("Origin") %>% htmltools::tagAppendAttributes(id = "leaf1T")
-    ),
-    htmltools::tags$div(
-      style = "color: black;width:50%;display:block;float:left;",
-      shiny::h1("Destination") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
     ),
     htmltools::tags$div(
       style = 'width:50%;display:block;float:left;',
@@ -670,17 +677,14 @@ ggsave(plot_gg1,filename = "plot_c2.png")
 
 htmltools::browsable(
   htmltools::tagList(list(
+    shiny::br(),
     htmltools::tags$div(
-      style = "color: black;",
-      shiny::h1("Trip between 9:00 and 10:00 am") %>% htmltools::tagAppendAttributes(id = "PlotTitle")
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
     ),
     htmltools::tags$div(
       style = "color: black;width:50%;display:block;float:left;",
-      shiny::h1("Origin") %>% htmltools::tagAppendAttributes(id = "leaf1T")
-    ),
-    htmltools::tags$div(
-      style = "color: black;width:50%;display:block;float:left;",
-      shiny::h1("Destination") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
     ),
     htmltools::tags$div(
       style = 'width:50%;display:block;float:left;',
@@ -697,11 +701,507 @@ htmltools::browsable(
 
   </div>
   <div id="clst3" class="tab-pane fade">
-      <h3>Cluster 3</h3>
-      <p>Some content in cluster 3.</p>
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%"}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 3, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(3)
+
+ggsave(plot_gg1,filename = "plot_c3.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c3.png"
+    )
+  ))
+)
+
+```
+
   </div>
   <div id="clst4" class="tab-pane fade">
-      <h3>Cluster 4</h3>
-      <p>Some content in cluster 4.</p>
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 4, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(4)
+
+ggsave(plot_gg1,filename = "plot_c4.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c4.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst5" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 5, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(5)
+
+ggsave(plot_gg1,filename = "plot_c5.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c4.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst6" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 6, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(6)
+
+ggsave(plot_gg1,filename = "plot_c6.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c6.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst7" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 7, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(7)
+
+ggsave(plot_gg1,filename = "plot_c7.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c7.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst8" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 8, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(8)
+
+ggsave(plot_gg1,filename = "plot_c8.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c8.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst9" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 9, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(9)
+
+ggsave(plot_gg1,filename = "plot_c9.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c9.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst10" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 10, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(10)
+
+ggsave(plot_gg1,filename = "plot_c10.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c10.png"
+    )
+  ))
+)
+
+```
+
+  </div>
+  <div id="clst11" class="tab-pane fade">
+
+```{r, echo=FALSE,fig.show="hold", out.width="50%", warning=FALSE, message=FALSE}
+
+zonas_777_DTPM_plot_final_c1 <- 
+  zonas_777_DTPM_plot_final %>%
+  mutate(fill_color3 = ifelse(Cluster == 11, fill_color3, "grey")) 
+
+
+leaf_tab <- 
+leaflet(data = zonas_777_DTPM_plot_final_c1,
+        options = leaflet::leafletOptions(zoomControl = FALSE,
+                                          minZoom = 10, 
+                                          maxZoom = 10,
+                                          zoomSnap = 0.01)) %>%
+  setView(lng = -70.69,
+          lat =  -33.5,
+          zoom = 10)%>% 
+  addPolygons(data = zonas_777_DTPM_plot_final_c1,
+              color = "grey",
+              weight = 1,
+              smoothFactor = 0.5,
+              fillColor = ~fill_color3,
+              fillOpacity = 0.7,
+              label = ~text_lab) 
+
+plot_gg1 <- plot_bgo(11)
+
+ggsave(plot_gg1,filename = "plot_c11.png")
+
+
+htmltools::browsable(
+  htmltools::tagList(list(
+    shiny::br(),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Zones") %>% htmltools::tagAppendAttributes(id = "leaf1T")
+    ),
+    htmltools::tags$div(
+      style = "color: black;width:50%;display:block;float:left;",
+      shiny::h1("Trips by half hour") %>% htmltools::tagAppendAttributes(id = "leaf2T")
+    ),
+    htmltools::tags$div(
+      style = 'width:50%;display:block;float:left;',
+      leaf_tab
+    ),
+    htmltools::tags$img(
+      style = 'width:50%;display:block;float:left;',
+      src = "./plot_c11.png"
+    )
+  ))
+)
+
+```
+
   </div>
 </div>
