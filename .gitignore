@@ -6,3 +6,6 @@
 Thumbs.db
 /public/
 /resources/
+.env
+.Rprofile
+data

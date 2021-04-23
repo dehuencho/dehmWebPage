@@ -4,10 +4,14 @@ blogdown::new_post(title = "KMeans clusters for zones classifcation with public 
                    ext = '.Rmd', 
                    subdir = "post")
 
+blogdown::new_post(title = "Rstudio with Python:  Santiagos's subway stations & Venues data analysis", 
+                   ext = '.Rmd', 
+                   subdir = "post")
+
 blogdown::serve_site()
 blogdown::stop_server()
 
-blogdown::check_gitignore()
+gblogdown::check_gitignore()
 blogdown::check_content()
 
 rstudioapi::navigateToFile('config.yaml', line = 3)
@@ -23,3 +27,4 @@ blogdown::check_config()
 
 
 rstudioapi::navigateToFile("content/authors/admin/_index.md")
+reticulate::py_config()

@@ -12,8 +12,8 @@ lastmod: '2021-02-10T12:13:00-03:00'
 featured: no
 image:
   caption: ''
-  focal_point: ''
-  preview_only: no
+  focal_point: 'Smart'
+  preview_only: yes
 projects: ["R"]
 math: true
 markup: mmark
@@ -333,6 +333,8 @@ $$
 
 ## Applying Kmeans to our data
 
+First we arrange our data to a format that allow us to fit the model with the function *kmeans*. This function take like argument a matrix in which each row is an observation, and each column a numerical vector (dimension) that the model will use calculate the distance.  
+
 ```{r}
 Kmeans_df <- 
 SubidasBajadas_zonas %>%
@@ -354,7 +356,21 @@ SubidasBajadas_zonas %>%
                          values_from = Bajadas, values_fill = 0))
 
 Kmeans_df[is.na(Kmeans_df)] <- 0
+
+f<-"frames/matriz_kmeans.html"
+
+htmlwidgets::saveWidget(DT::datatable(head(Kmeans_df,10),
+                                      options = list(scrollX = TRUE,
+                                                     pageLength = 5)),
+                        file = file.path(normalizePath(dirname(f)),
+                                         basename(f)),
+                        selfcontained = TRUE)
+
 ```
+
+<iframe src="frames/matriz_kmeans.html" width="1100" height="320" scrolling="no" seamless="seamless" frameBorder="0"> </iframe>
+
+So with this matrix (still a data.frame) we use a lapply loop to evaluate different centers number an see how the total distance withinss change. The idea of this visualization is to find a point where the curve has an abrupt change in slope.   
 
 ```{r}
 set.seed(19634)
@@ -387,8 +403,9 @@ ggplot(data = data.frame(centers = n_centers,
   ) + labs(y = "", x = "Centers",
            title = "Total within sum of square by cluster centers")
 
-## Vamos a probar con 18 
 ```
+
+Yo can see that 11 centers has a smooth break in the slope, and then we have sudden drops over the 20 centers. For this exercise i will use 11, because i prefer to maintain a low number of centers. Now we proceed to fit the final model and create a data.frame with the fitted clusters.  
 
 ```{r cluster_plot,warning=FALSE, message=FALSE}
 
@@ -412,6 +429,8 @@ SubidasBajadas_zonas %>%
   mutate_if(is.double, round,2)
 
 ```
+
+On the next image you can see all the clusters, an their trip's behavior during the day. 
 
 ```{r cluster_plot2, echo=FALSE,out.extra='id="hoge"', fig.height=10, fig.width=7 ,warning=FALSE, message=FALSE}
 tm_lvls<- levels(ploting_data$Time_fctr)
@@ -860,7 +879,7 @@ htmltools::browsable(
     ),
     htmltools::tags$img(
       style = 'width:50%;display:block;float:left;',
-      src = "./plot_c4.png"
+      src = "./plot_c5.png"
     )
   ))
 )

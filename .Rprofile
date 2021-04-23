@@ -24,3 +24,4 @@ options(
 
 # fix Hugo version
 options(blogdown.hugo.version = "0.80.0")
+Sys.setenv(RETICULATE_PYTHON = "E:/2021_Proyectos_programacion/dehmWebPage/.env/Scripts")

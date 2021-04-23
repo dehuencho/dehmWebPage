@@ -1,0 +1,459 @@
+---
+title: "Rstudio with Python:  Santiagos's subway stations & Venues data analysis"
+author: Daniel Huencho
+date: '2021-04-22'
+slug: rstudio-with-python-santiagos-s-subway-stations-venues-data-analysis
+categories: ["Python"]
+tags: ["Python", "Rstudio", "reticulate", "folium", "k-means", "scikit-learn", "APIs"]
+subtitle: ''
+summary: "In this post I will explain how to set the environment on Rstudio for working with Python. Then we gone a use this environment to do the capstone project of IBM's professional certificion. For this we gonna download geospatial information from Foursquare's API and fit a k-means model for clustering."
+authors: []
+lastmod: '2021-04-22T13:33:47-04:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: yes
+projects: ["Python"]
+math: true
+markup: mmark
+toc: true
+output:
+  blogdown::html_page:
+    toc: true
+---
+
+<script src="{{< blogdown/postref >}}index_files/kePrint/kePrint.js"></script>
+<link href="{{< blogdown/postref >}}index_files/lightable/lightable.css" rel="stylesheet" />
+
+<div id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#environment-setup">Environment setup</a></li>
+<li><a href="#data">Data</a></li>
+<li><a href="#methodology">Methodology</a></li>
+<li><a href="#result-and-discussion">Result and discussion</a></li>
+<li><a href="#conclusion">Conclusion</a></li>
+</ul>
+</div>
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>In this post I will analyzes the surroundings of the <a href="https://www.metro.cl/">Metro de Santiago</a>’s subway stations. For Metro, it is important to understand the behavior of its customers. Much of this behavior comes from the characteristics of the origin and destination of the trip, therefore describing the stations regarding the services and products of the surrounding environment can provide Metro with valuable information to understand certain indicators of demand.</p>
+<p>The aim of this analysis will be to get information of the surrounding of each station from the Foursquare API, then with this data create clusters of stations that allows to summarize the patterns observed in the data and finally visualize this results to conclude with the findings of the models.</p>
+</div>
+<div id="environment-setup" class="section level2">
+<h2>Environment setup</h2>
+<ul>
+<li><p>Install Python and the virtual environment library (pip instal virtualenv).</p></li>
+<li><p>Create a new project from Rstudio.</p></li>
+<li><p>Start a virtual environment from cmd with <strong>virtualenv .env</strong> command.</p></li>
+<li><p>In command prompt, go into .env folder with <strong>cd .env</strong>, then into Scripts folder. Run <strong>activate</strong> from cmd.</p></li>
+<li><p>Now you are in the virtual environment and can proceed to install the different python libraries that you will use. Then you can close the cmd.</p></li>
+<li><p>Create a .Rprofile file in the project folder, on the file write this line of code (replace PATH_TO_YOUR_PROJECT with your information):</p></li>
+</ul>
+<pre class="r"><code>Sys.setenv(RETICULATE_PYTHON = &quot;PATH_TO_YOUR_PROJECT/.env/Scripts&quot;)</code></pre>
+<ul>
+<li>At last to test it is working open a script, restart R if you had it open already, and run this line of code (It should show the path information of the step 6):</li>
+</ul>
+<pre class="r"><code>reticulate::py_config()</code></pre>
+</div>
+<div id="data" class="section level2">
+<h2>Data</h2>
+<p>First we will import all the libraries needed.</p>
+<pre class="python"><code>import numpy as np
+import pandas as pd
+import os 
+import json 
+import requests # library to handle requests
+
+from geopy.geocoders import Nominatim 
+
+import matplotlib.cm as cm
+import matplotlib.colors as colors
+import matplotlib.pyplot as plt
+
+from sklearn.cluster import KMeans
+from sklearn import metrics
+from sklearn import preprocessing
+
+import folium # map rendering library
+print(&#39;Hello Capstone Project Course: Libraries loaded!&#39;)</code></pre>
+<pre><code>## Hello Capstone Project Course: Libraries loaded!</code></pre>
+<p>Let’s read the station data:</p>
+<pre class="python"><code>df_stations = pd.read_csv(&#39;data/metro_station.csv&#39;,sep=&quot;;&quot;, decimal=&quot;.&quot;)
+df_stations_unique = df_stations.drop_duplicates(subset=[&#39;est_name&#39;]).copy()
+df_stations_unique.reset_index(drop = True, inplace = True)
+df_stations_unique.rename(columns = {&#39;est_name&#39; : &#39;Station&#39;}, inplace = True)</code></pre>
+<table class="table table-striped table-hover table-condensed table-responsive" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+est_cod
+</th>
+<th style="text-align:left;">
+linea
+</th>
+<th style="text-align:right;">
+via
+</th>
+<th style="text-align:right;">
+lon
+</th>
+<th style="text-align:right;">
+lat
+</th>
+<th style="text-align:left;">
+Station
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+SP
+</td>
+<td style="text-align:left;">
+L1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-70.72322
+</td>
+<td style="text-align:right;">
+-33.44528
+</td>
+<td style="text-align:left;">
+San Pablo
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NP
+</td>
+<td style="text-align:left;">
+L1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-70.72274
+</td>
+<td style="text-align:right;">
+-33.45143
+</td>
+<td style="text-align:left;">
+Neptuno
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+PJ
+</td>
+<td style="text-align:left;">
+L1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-70.71547
+</td>
+<td style="text-align:right;">
+-33.45753
+</td>
+<td style="text-align:left;">
+Pajaritos
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+LR
+</td>
+<td style="text-align:left;">
+L1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-70.70677
+</td>
+<td style="text-align:right;">
+-33.45764
+</td>
+<td style="text-align:left;">
+Las Rejas
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+EC
+</td>
+<td style="text-align:left;">
+L1
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+-70.69973
+</td>
+<td style="text-align:right;">
+-33.45603
+</td>
+<td style="text-align:left;">
+Ecuador
+</td>
+</tr>
+</tbody>
+</table>
+<p><strong>With this data let’s plot the stations on a map</strong>. First let´s find the location of the center of the city (Santiago, Chile).</p>
+<pre class="python"><code>address = &#39;Santiago, Chile&#39;
+
+geolocator = Nominatim(user_agent=&quot;tor_explorer&quot;)
+location = geolocator.geocode(address)
+latitude = location.latitude
+longitude = location.longitude
+print(&#39;The geograpical coordinate of Santiago are {}, {}.&#39;.format(latitude, longitude))</code></pre>
+<pre><code>## The geograpical coordinate of Santiago are -33.4377756, -70.6504502.</code></pre>
+<p>Let’s plot the stations with <strong>folium</strong> librarie.</p>
+<pre class="python"><code>map_santiago = folium.Map(location=[latitude*1.001, longitude], zoom_start=11)
+
+# add markers to map
+for lat, lng, name in zip(df_stations_unique[&#39;lat&#39;], df_stations_unique[&#39;lon&#39;], df_stations_unique[&#39;Station&#39;]):
+    label = &#39;{}&#39;.format(name)
+    label = folium.Popup(label, parse_html=True)
+    folium.CircleMarker(
+        [lat, lng],
+        radius=5,
+        popup=label,
+        color=&#39;blue&#39;,
+        fill=True,
+        fill_color=&#39;#3186cc&#39;,
+        fill_opacity=0.7,
+        parse_html=False).add_to(map_santiago)  
+    
+map_santiago.save(&quot;mapa1.html&quot;)</code></pre>
+<p><iframe src="./mapa1.html" style="width:500px;height:500px;display:block;margin: 0 auto;"></iframe></p>
+<p>The next task is get the venues’s information from Foursquare API. First let’s define the credentials and version. For this i use local environmental variables for privacy with the library os.</p>
+<pre class="python"><code>CLIENT_ID = os.getenv(&#39;foursquare_client_id&#39;) # your Foursquare ID
+CLIENT_SECRET = os.getenv(&#39;foursquare_client_secret&#39;) # your Foursquare Secret
+VERSION = &#39;20180605&#39; # Foursquare API version
+LIMIT = 100 # A default Foursquare API limit value</code></pre>
+<p>Let’s define a function that help us to obtain the venues from each stations and get the information.</p>
+<pre class="python"><code>def getNearbyVenues(names, latitudes, longitudes, radius=500):
+    
+    venues_list=[]
+    for name, lat, lng in zip(names, latitudes, longitudes):
+        print(name)
+            
+        # create the API request URL
+        url = &#39;https://api.foursquare.com/v2/venues/explore?&amp;client_id={}&amp;client_secret={}&amp;v={}&amp;ll={},{}&amp;radius={}&amp;limit={}&#39;.format(
+            CLIENT_ID, 
+            CLIENT_SECRET, 
+            VERSION, 
+            lat, 
+            lng, 
+            radius, 
+            LIMIT)
+            
+        # make the GET request
+        results = requests.get(url).json()[&quot;response&quot;][&#39;groups&#39;][0][&#39;items&#39;]
+        
+        # return only relevant information for each nearby venue
+        venues_list.append([(
+            name, 
+            lat, 
+            lng, 
+            v[&#39;venue&#39;][&#39;name&#39;], 
+            v[&#39;venue&#39;][&#39;location&#39;][&#39;lat&#39;], 
+            v[&#39;venue&#39;][&#39;location&#39;][&#39;lng&#39;],  
+            v[&#39;venue&#39;][&#39;categories&#39;][0][&#39;name&#39;]) for v in results])
+
+    nearby_venues = pd.DataFrame([item for venue_list in venues_list for item in venue_list])
+    nearby_venues.columns = [&#39;Station&#39;, 
+                  &#39;Station Latitude&#39;, 
+                  &#39;Station Longitude&#39;, 
+                  &#39;Venue&#39;, 
+                  &#39;Venue Latitude&#39;, 
+                  &#39;Venue Longitude&#39;, 
+                  &#39;Venue Category&#39;]
+    
+    return(nearby_venues)
+    
+metro_venues = getNearbyVenues(names=df_stations_unique[&#39;Station&#39;],
+                                   latitudes=df_stations_unique[&#39;lat&#39;],
+                                   longitudes=df_stations_unique[&#39;lon&#39;])</code></pre>
+<p>We fix some categories.</p>
+<pre class="python"><code>## We unify restaurants categories
+metro_venues.loc[metro_venues[&#39;Venue Category&#39;].str.contains(&#39;Restaurant&#39;, regex=False, na=False), &#39;Venue Category&#39;] = &#39;Restaurant&#39;
+## We erase metro station category
+metro_venues = metro_venues[~metro_venues[&#39;Venue Category&#39;].str.contains(&#39;Metro&#39;, na=False)]
+print(&#39;There are {} uniques categories.&#39;.format(len(metro_venues[&#39;Venue Category&#39;].unique())))</code></pre>
+<pre><code>## There are 240 uniques categories.</code></pre>
+</div>
+<div id="methodology" class="section level2">
+<h2>Methodology</h2>
+<p>Let’s transform the data to a wide format.</p>
+<pre class="python"><code>metro_onehot = pd.get_dummies(metro_venues[[&#39;Venue Category&#39;]], prefix=&quot;&quot;, prefix_sep=&quot;&quot;)
+# add neighborhood column back to dataframe
+metro_onehot[&#39;Station&#39;] = metro_venues[&#39;Station&#39;] 
+# move neighborhood column to the first column
+fixed_columns = [metro_onehot.columns[-1]] + list(metro_onehot.columns[:-1])
+metro_onehot = metro_onehot[fixed_columns]</code></pre>
+<p>Now let’s obtain the mean of each category per station. And obtain the numeric matrix we are going to use for fitting the k-means model.</p>
+<pre class="python"><code>metro_grouped = metro_onehot.groupby(&#39;Station&#39;).mean().reset_index()
+metro_grouped_clustering = metro_grouped.drop(&#39;Station&#39;, 1)
+
+X = metro_grouped_clustering</code></pre>
+<p>Now lets fit with different number of clusters to define the optimum amount with the elbow method.</p>
+<pre class="python"><code>Ks = 70
+mean_acc = np.zeros((Ks-1))
+std_acc = np.zeros((Ks-1))
+
+
+for n in range(1,Ks):
+    
+    #Train Model and Predict  
+    kmeans = KMeans(n_clusters=n, random_state=0).fit(X)
+    mean_acc[n-1] = kmeans.inertia_
+
+
+plt.plot(range(1,Ks),mean_acc,&#39;g&#39;)
+plt.ylabel(&#39;SSE &#39;)
+plt.xlabel(&#39;Number of Clusters&#39;)
+plt.tight_layout()
+plt.savefig(&#39;kmeans_sse.png&#39;)
+plt.show()</code></pre>
+<p><img style="width:60%;display:block;" src="kmeans_sse.png"/></p>
+<p>Let’s fit the model with k = 8.</p>
+<pre class="python"><code># set number of clusters
+kclusters = 8
+# run k-means clustering
+kmeans = KMeans(n_clusters=kclusters, random_state=0).fit(X)</code></pre>
+<p>Let’s merge the result with the stations and venues table to calculate descriptive statistics for each cluster.</p>
+<pre class="python"><code>metro_grouped.insert(0, &#39;Cluster Labels&#39;, kmeans.labels_)
+metro_merged = df_stations_unique
+metro_merged = metro_merged.join(metro_grouped.set_index(&#39;Station&#39;), on=&#39;Station&#39;)</code></pre>
+<p>Now we plot the results with station colored by cluster with the folium library.</p>
+<pre class="python"><code># create map
+map_clusters = folium.Map(location=[latitude, longitude], zoom_start=11)
+
+# set color scheme for the clusters
+x = np.arange(kclusters)
+ys = [i + x + (i*x)**2 for i in range(kclusters)]
+colors_array = cm.rainbow(np.linspace(0, 1, len(ys)))
+rainbow = [colors.rgb2hex(i) for i in colors_array]
+
+# add markers to the map
+markers_colors = []
+for lat, lon, poi, cluster in zip(metro_merged[&#39;lat&#39;], metro_merged[&#39;lon&#39;], metro_merged[&#39;Station&#39;], metro_merged[&#39;Cluster Labels&#39;]):
+    label = folium.Popup(str(poi) + &#39; Cluster &#39; + str(cluster), parse_html=True)
+    folium.CircleMarker(
+        [lat, lon],
+        radius=5,
+        popup=label,
+        color=rainbow[cluster-1],
+        fill=True,
+        fill_color=rainbow[cluster-1],
+        fill_opacity=0.7).add_to(map_clusters)
+       
+map_clusters.save(&quot;mapa_cluster.html&quot;)</code></pre>
+<p><iframe src="./mapa_cluster.html" style="width:500px;height:600px;display:block;margin: 0 auto;"></iframe></p>
+<p>Then we calculate some statistics with a function to summarize each cluster.</p>
+<pre class="python"><code>cluster_data =  neighborhoods_venues_sorted.iloc[:,0:2].join(metro_grouped.set_index(&#39;Station&#39;), on=&#39;Station&#39;).copy()
+
+cluster_data_mean = cluster_data.groupby(&#39;Cluster Labels&#39;).mean().reset_index()
+cluster_data_median = cluster_data.groupby(&#39;Cluster Labels&#39;).median().reset_index()
+cluster_data_q25 = cluster_data.groupby(&#39;Cluster Labels&#39;).quantile(.25).reset_index()
+cluster_data_q75 = cluster_data.groupby(&#39;Cluster Labels&#39;).quantile(.75).reset_index()
+cluster_data_std = cluster_data.groupby(&#39;Cluster Labels&#39;).std().reset_index()
+cluster_data_name = cluster_data.groupby([&#39;Cluster Labels&#39;])[&#39;Station&#39;].agg([(&#39;Stations&#39;, lambda Station: &#39; - &#39;.join(Station))])
+
+def clusterSummary(id):
+    print(cluster_data_name.iloc[id,0])
+    df_cluster1 = pd.concat([cluster_data_mean.reset_index(drop=True).iloc[id,1:], 
+                         cluster_data_q25.iloc[id,1:], 
+                         cluster_data_median.iloc[id,1:],
+                         cluster_data_q75.iloc[id,1:],
+                         cluster_data_std.iloc[id,1:]], axis=1)
+    df_cluster1.columns = [&#39;Mean&#39;, &#39;Qtl 0.25&#39;, &#39;Median&#39;, &#39;Qtl 0.75&#39;, &#39;Stand. Desv.&#39;]
+    df_cluster1.sort_values(by=[&#39;Mean&#39;], ascending=False,inplace = True)
+    return(df_cluster1.reset_index().loc[0:10,:])</code></pre>
+<p>Now let’s present the structure of each cluster with the venue frequency for the 10 most common venue for each one.</p>
+<ul class="nav nav-tabs">
+<li>
+<a data-toggle="tab" href="#clst1" class = "active">C01</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst2">C02</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst3">C03</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst4">C04</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst5">C05</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst6">C06</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst7">C07</a>
+</li>
+<li>
+<a data-toggle="tab" href="#clst8">C08</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="clst1" class="tab-pane fade active show">
+<p><img style="width:80%;display:block;" src="clstr1.JPG"/></p>
+</div>
+<div id="clst2" class="tab-pane fade">
+<p><img style="width:80%;display:block;" src="clstr2.JPG"/></p>
+</div>
+<div id="clst3" class="tab-pane fade">
+<img style="width:80%;display:block;" src="clstr3.JPG"/>
+</div>
+<div id="clst4" class="tab-pane fade">
+<img style="width:80%;display:block;" src="clstr4.JPG"/>
+</div>
+<div id="clst5" class="tab-pane fade">
+<img style="width:80%;display:block;" src="clstr5.JPG"/>
+</div>
+<div id="clst6" class="tab-pane fade">
+<img style="width:80%;display:block;" src="clstr6.JPG"/>
+</div>
+<div id="clst7" class="tab-pane fade">
+<img style="width:80%;display:block;" src="clstr7.JPG"/>
+</div>
+<div id="clst8" class="tab-pane fade">
+<img style="width:80%;display:block;" src="clstr8.JPG"/>
+</div>
+</div>
+</div>
+<div id="result-and-discussion" class="section level2">
+<h2>Result and discussion</h2>
+<p>Then with this tables let’s try to describe the different clusters:</p>
+<ul>
+<li><p>Cluster 1: The surroundings of this stations are characterized with a bus station near them, with some other venues like restaurants, parks and pharmacy. Probably in this group are the intermodal stations.</p></li>
+<li><p>Cluster 2: This stations are near a restaurants zone, with this venue having the higher percentage of the surrounding (37% to 42% interquartile distance)</p></li>
+<li><p>Cluster 3: This stations have more variety of venues in the surround with a medium percentage of restaurant, but also pharmacy and a lot of low percentage venues like gyms, bakeries and others.</p></li>
+<li><p>Cluster 4: This is a cluster with one station, that only have a mall and music venue in the surrounding.</p></li>
+<li><p>Cluster 5: This stations have a high percentage of the surrounding with restaurants, greater than cluster 3, but it also have a good variety of venues like bars, plazas, coffee shops and others.</p></li>
+<li><p>Cluster 6: This group stations have a surrounding environment with a high percentage plaza, soccer field and food truck. So is a zone for sports and outdoors activities.</p></li>
+<li><p>Cluster 7: This stations are near food trucks, soccer fields and stadium.</p></li>
+<li><p>Cluster 8: This cluster has high percentage of coffee stores and furniture/homes stores.</p></li>
+</ul>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>In this analysis we merge data from Santiago’s subways stations with the venues of their surroundings downloaded from the Foursquare’s API. This information allows to fit a cluster model using k-means methods and found segmentation for the 125 stations of the network. We obtain 8 clusters that represent specific surrounding structure and allows us to have a better and summarized understanding of this system.</p>
+<p>For next steps we can use the patterns we find in this analysis and test if it can helps in other models for customers behavior.</p>
+</div>
